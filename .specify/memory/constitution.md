@@ -1,16 +1,19 @@
 <!--
 Sync Impact Report:
-- Version: N/A → 1.0.0 (initial ratification)
-- Added sections: Core Principles (3 principles), Development Workflow, Governance
-- Added principles:
-  1. ライブラリファースト (Library-First)
-  2. テストファースト/TDD (Test-First - NON-NEGOTIABLE)
-  3. シンプルさ (Simplicity)
+- Version: 1.0.0 → 1.1.0 (minor version bump)
+- Modified sections: Development Workflow (added Branch Strategy subsection)
+- Added sections: Branch Strategy (フェーズベースブランチ戦略)
+- Removed sections: None
+- Modified principles: None
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md (Constitution Check section aligned)
-  ✅ .specify/templates/spec-template.md (Requirements aligned)
-  ✅ .specify/templates/tasks-template.md (Test-first workflow aligned)
+  ✅ .specify/templates/plan-template.md (No changes needed - Constitution Check aligned)
+  ✅ .specify/templates/spec-template.md (No changes needed)
+  ✅ .specify/templates/tasks-template.md (No changes needed - phase organization already present)
+  ⚠️  .specify/templates/commands/implement.md (Should reference branch strategy if exists)
 - Follow-up TODOs: None
+- Rationale: Added explicit branch strategy guidance as a development workflow practice.
+  This is a MINOR bump because it adds a new subsection with normative guidance but does
+  not alter existing principles or remove any content.
 -->
 
 # Todo App with Rust プロジェクト憲法
@@ -64,6 +67,47 @@ Rustの表現力を活用し、型システムで複雑さを管理する。
 
 ## 開発ワークフロー
 
+### ブランチ戦略
+
+機能実装時は**フェーズベースのブランチ戦略**を採用する：
+
+**原則**:
+
+- メインブランチ: `[###-feature-name]`（例: `001-task-management`）
+- フェーズブランチ: `[###-feature-name]-phase[N]`（例: `001-task-management-phase0`）
+
+**ワークフロー**:
+
+1. 機能ブランチ（`[###-feature-name]`）から各フェーズブランチを作成
+2. フェーズ内のタスクを順次実装し、フェーズ完了後に機能ブランチへマージ
+3. 各フェーズは論理的に独立した単位（Setup, Database, Authentication, 等）
+4. フェーズ完了時にレビューとマージを実施
+
+**ブランチ例**:
+
+```bash
+# Phase 0: Project Setup
+git checkout -b 001-task-management-phase0
+
+# Phase 0 完了後
+git checkout 001-task-management
+git merge 001-task-management-phase0
+
+# Phase 1: Database Schema
+git checkout -b 001-task-management-phase1
+# ... 以降同様
+```
+
+**利点**:
+
+- 適度な粒度（フェーズ単位）でレビュー可能
+- 進捗管理が容易（Phase完了 = マイルストーン達成）
+- 大きすぎず小さすぎないコミット単位
+- ロールバックが容易（Phaseごとに切り戻し可能）
+
+**根拠**: タスク単位（740タスク）では管理が煩雑になり、機能全体（20フェーズ）では
+レビューが困難になる。フェーズ単位は学習プロジェクトに適した粒度を提供する。
+
 ### コードレビュー要件
 
 - すべてのプルリクエストは憲法への準拠を確認すること
@@ -112,4 +156,4 @@ Rustの表現力を活用し、型システムで複雑さを管理する。
 - 複雑さには正当化が必要
 - 定期的な憲法の見直しと更新
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-24 | **Last Amended**: 2025-12-24
+**Version**: 1.1.0 | **Ratified**: 2025-12-24 | **Last Amended**: 2025-12-25
