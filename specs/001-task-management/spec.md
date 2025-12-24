@@ -1,115 +1,185 @@
-# Feature Specification: [FEATURE NAME]
+# Feature Specification: タスク管理システム
 
-**Feature Branch**: `[###-feature-name]`  
-**Created**: [DATE]  
-**Status**: Draft  
-**Input**: User description: "$ARGUMENTS"
+**Feature Branch**: `001-task-management`
+**Created**: 2025-12-24
+**Status**: Draft
+**Input**: User description: "Rust を学習中のソフトウェアエンジニアです。今回、バックエンドに axum、フロンエンドに dioxus を使用した タスク管理サービスを学習目的で作成したいです。このアプリケーションでは、以下のような機能を想定しています。自分のタスクを簡単に登録したい、タスクに終了期限を設定できるようにしたい、タスクに優先順位をつけたい、ステータス（未着手・着手・完了）を管理したい、ステータスでタスクを絞り込みたい、タスク名・タスクの説明文でタスクを検索したい、タスクを一覧したい。一覧画面で（優先順位、終了期限などを元にして）ソートしたい、タスクにラベルなどをつけて分類したい、ユーザ登録し、自分が登録したタスクだけを見られるようにしたい"
 
 ## User Scenarios & Testing *(mandatory)*
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+### User Story 1 - ユーザー登録とログイン (Priority: P1)
 
-### User Story 1 - [Brief Title] (Priority: P1)
+ユーザーは、個人用のアカウントを作成し、ログインすることで自分専用のタスク管理スペースにアクセスできます。これにより、他のユーザーのタスクと混在せず、プライバシーが保護されたタスク管理が可能になります。
 
-[Describe this user journey in plain language]
+**Why this priority**: タスク管理の前提条件として、ユーザーの識別とデータの分離が必要です。これがないと、誰のタスクかを区別できず、マルチユーザー環境で使用できません。
 
-**Why this priority**: [Explain the value and why it has this priority level]
-
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+**Independent Test**: テストユーザーがアカウント作成し、ログインして自分のタスクスペースにアクセスできることを確認。ログアウト後、再ログインして同じタスクにアクセスできることを検証。
 
 **Acceptance Scenarios**:
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
-2. **Given** [initial state], **When** [action], **Then** [expected outcome]
+1. **Given** 新規ユーザーがシステムにアクセスした状態で、**When** 有効なメールアドレスとパスワードで登録を完了すると、**Then** アカウントが作成され、自動的にログイン状態になる
+2. **Given** 登録済みユーザーがログアウトした状態で、**When** 正しい認証情報でログインすると、**Then** 自分のタスク一覧画面にアクセスできる
+3. **Given** ログイン済みのユーザーが、**When** ログアウトを実行すると、**Then** セッションが終了し、タスクデータにアクセスできなくなる
+4. **Given** ユーザーが間違ったパスワードを入力した状態で、**When** ログインを試みると、**Then** エラーメッセージが表示され、ログインが拒否される
 
 ---
 
-### User Story 2 - [Brief Title] (Priority: P2)
+### User Story 2 - タスクの作成と基本情報の設定 (Priority: P2)
 
-[Describe this user journey in plain language]
+ユーザーは、新しいタスクを作成し、タスク名、説明、終了期限、優先順位を設定できます。これにより、タスクの内容を明確に記録し、重要度や緊急度を管理できます。
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**Why this priority**: タスク管理の中核機能です。ユーザー認証の次に必要な、最小限の価値を提供する機能です。
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Test**: ログインユーザーが新規タスクを作成し、タスク名「レポート作成」、説明「月次レポートを作成する」、期限「2025-12-31」、優先順位「高」を設定して保存。保存後、タスク一覧に表示されることを確認。
 
 **Acceptance Scenarios**:
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+1. **Given** ログイン済みのユーザーが、**When** タスク作成画面でタスク名と説明を入力して保存すると、**Then** 新しいタスクが作成され、タスク一覧に表示される
+2. **Given** タスク作成画面で、**When** 終了期限を設定して保存すると、**Then** タスクに期限が記録され、一覧画面で期限が表示される
+3. **Given** タスク作成画面で、**When** 優先順位（高・中・低）を選択して保存すると、**Then** タスクに優先順位が設定され、一覧画面で視覚的に区別できる
+4. **Given** タスク作成画面で、**When** タスク名を空欄のまま保存しようとすると、**Then** エラーメッセージが表示され、保存が拒否される
 
 ---
 
-### User Story 3 - [Brief Title] (Priority: P3)
+### User Story 3 - タスクのステータス管理 (Priority: P3)
 
-[Describe this user journey in plain language]
+ユーザーは、タスクのステータスを「未着手」「着手」「完了」の間で変更できます。これにより、タスクの進捗状況を可視化し、作業の進行を追跡できます。
 
-**Why this priority**: [Explain the value and why it has this priority level]
+**Why this priority**: タスク作成の次に重要な機能で、タスクのライフサイクル管理を可能にします。
 
-**Independent Test**: [Describe how this can be tested independently]
+**Independent Test**: 既存のタスクを選択し、ステータスを「未着手」→「着手」→「完了」と順番に変更。各変更後、タスク一覧でステータスが正しく反映されることを確認。
 
 **Acceptance Scenarios**:
 
-1. **Given** [initial state], **When** [action], **Then** [expected outcome]
+1. **Given** 「未着手」ステータスのタスクが存在する状態で、**When** ユーザーがステータスを「着手」に変更すると、**Then** タスクのステータスが更新され、一覧画面で「着手」として表示される
+2. **Given** 「着手」ステータスのタスクが存在する状態で、**When** ユーザーがステータスを「完了」に変更すると、**Then** タスクが完了済みとしてマークされ、視覚的に区別される
+3. **Given** 複数のタスクが存在する状態で、**When** 1つのタスクのステータスを変更すると、**Then** そのタスクのみが更新され、他のタスクは影響を受けない
 
 ---
 
-[Add more user stories as needed, each with an assigned priority]
+### User Story 4 - ステータスによるタスクの絞り込み (Priority: P4)
+
+ユーザーは、タスク一覧をステータス（未着手・着手・完了）でフィルタリングできます。これにより、現在取り組むべきタスクや完了したタスクを素早く確認できます。
+
+**Why this priority**: タスクが増えてきた時の利便性を向上させる機能です。基本的なタスク管理が動作した後に追加する価値があります。
+
+**Independent Test**: タスク一覧画面で「着手」フィルターを選択。「着手」ステータスのタスクのみが表示され、「未着手」「完了」のタスクが非表示になることを確認。
+
+**Acceptance Scenarios**:
+
+1. **Given** 異なるステータスのタスクが複数存在する状態で、**When** 「未着手」フィルターを選択すると、**Then** 未着手のタスクのみが一覧に表示される
+2. **Given** フィルターが適用されている状態で、**When** 「すべて表示」を選択すると、**Then** すべてのタスクが一覧に表示される
+3. **Given** 「完了」フィルターを選択した状態で、**When** 完了済みタスクが0件の場合、**Then** 「完了したタスクはありません」というメッセージが表示される
+
+---
+
+### User Story 5 - タスクの検索 (Priority: P5)
+
+ユーザーは、タスク名または説明文に含まれるキーワードでタスクを検索できます。これにより、多数のタスクの中から特定のタスクを素早く見つけることができます。
+
+**Why this priority**: タスク数が増加した際の生産性向上機能です。基本的なCRUD操作とフィルタリングの後に価値を発揮します。
+
+**Independent Test**: 検索ボックスに「レポート」と入力。タスク名または説明に「レポート」を含むタスクのみが一覧に表示されることを確認。
+
+**Acceptance Scenarios**:
+
+1. **Given** 複数のタスクが存在する状態で、**When** 検索ボックスに特定のキーワードを入力すると、**Then** タスク名または説明にそのキーワードを含むタスクのみが表示される
+2. **Given** 検索結果が表示されている状態で、**When** 検索ボックスをクリアすると、**Then** すべてのタスクが再び表示される
+3. **Given** 検索ボックスにキーワードを入力した状態で、**When** どのタスクにも一致しない場合、**Then** 「該当するタスクが見つかりません」というメッセージが表示される
+
+---
+
+### User Story 6 - タスク一覧のソート (Priority: P6)
+
+ユーザーは、タスク一覧を優先順位、終了期限、作成日時などの基準でソートできます。これにより、最も重要なタスクや緊急のタスクを上位に表示して優先的に取り組めます。
+
+**Why this priority**: ユーザーエクスペリエンスの向上機能です。基本的なタスク管理が完成した後の付加価値機能です。
+
+**Independent Test**: タスク一覧画面で「優先順位」ソートを選択。高優先度のタスクが上位に、低優先度のタスクが下位に表示されることを確認。
+
+**Acceptance Scenarios**:
+
+1. **Given** 異なる優先順位のタスクが存在する状態で、**When** 「優先順位」ソートを選択すると、**Then** 高→中→低の順にタスクが並び替えられる
+2. **Given** 異なる終了期限のタスクが存在する状態で、**When** 「終了期限」ソートを選択すると、**Then** 期限が近いタスクから順に並び替えられる
+3. **Given** ソートが適用されている状態で、**When** 別のソート基準を選択すると、**Then** 新しい基準でタスクが再ソートされる
+
+---
+
+### User Story 7 - タスクへのラベル付けと分類 (Priority: P7)
+
+ユーザーは、タスクにラベル（タグ）を付けて分類できます。これにより、プロジェクト、カテゴリ、コンテキスト別にタスクを整理し、関連タスクをまとめて管理できます。
+
+**Why this priority**: 高度な整理機能です。基本的なタスク管理が確立された後に、より洗練されたワークフローを実現します。
+
+**Independent Test**: タスクに「仕事」「緊急」のラベルを追加。ラベルでフィルタリングして、同じラベルを持つタスクをグループ化して表示できることを確認。
+
+**Acceptance Scenarios**:
+
+1. **Given** タスク編集画面で、**When** 新しいラベル名を入力してタスクに追加すると、**Then** タスクにラベルが関連付けられ、タスク一覧でラベルが表示される
+2. **Given** タスクに複数のラベルが設定されている状態で、**When** 特定のラベルでフィルタリングすると、**Then** そのラベルを持つタスクのみが表示される
+3. **Given** ラベルが設定されたタスクが存在する状態で、**When** ラベルを削除すると、**Then** タスクからラベルが除去され、一覧画面で表示されなくなる
+4. **Given** 複数のユーザーが存在する状態で、**When** ユーザーAが作成したラベルは、**Then** ユーザーBには表示されない（ラベルはユーザー固有）
+
+---
 
 ### Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
-
-- What happens when [boundary condition]?
-- How does system handle [error scenario]?
+- ユーザーが大量のタスク（例：1000件以上）を持つ場合、パフォーマンスはどのように保たれるか？
+- タスクにラベルを設定せずに保存した場合、どのように扱われるか？
+- 優先順位や終了期限を設定しないタスクは、ソート時にどこに配置されるか？
+- ユーザーが複数のデバイスから同時にログインした場合、タスクの同期はどのように処理されるか？
+- メールアドレスが重複するユーザー登録を試みた場合、どのようなエラーメッセージが表示されるか？
 
 ## Requirements *(mandatory)*
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
-
 ### Functional Requirements
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
-- **FR-005**: System MUST [behavior, e.g., "log all security events"]
+- **FR-001**: システムは、ユーザーがメールアドレスとパスワードでアカウントを作成できること（パスワードは最小8文字以上）
+- **FR-002**: システムは、登録済みユーザーの認証情報を検証し、ログインを許可すること
+- **FR-003**: システムは、ログイン済みユーザーのみが自分のタスクにアクセスできるようにすること
+- **FR-017**: システムは、リレーショナルデータベース（PostgreSQLまたはMySQL）を使用してユーザー、タスク、ラベルのデータを永続化すること
+- **FR-004**: システムは、ユーザーが新しいタスクを作成し、タスク名と説明を保存できること
+- **FR-005**: システムは、タスクに終了期限を設定できること（日付形式）
+- **FR-006**: システムは、タスクに優先順位（高・中・低）を設定できること
+- **FR-007**: システムは、タスクのステータスを「未着手」「着手」「完了」のいずれかに設定・変更できること
+- **FR-008**: システムは、タスク一覧を表示し、各タスクの名前、ステータス、優先順位、期限を表示すること
+- **FR-018**: システムは、終了期限が過去の日付のタスクを視覚的に警告表示すること（例：赤色でハイライト）
+- **FR-009**: システムは、ステータスによるタスクのフィルタリング機能を提供すること
+- **FR-019**: システムは、複数のフィルター（ステータス、ラベルなど）を同時に適用した場合、AND条件で動作すること（すべての条件を満たすタスクのみ表示）
+- **FR-010**: システムは、タスク名または説明文に含まれるキーワードでタスクを検索できること
+- **FR-020**: システムは、検索とフィルターを同時に使用した場合、AND条件で動作すること（検索条件とフィルター条件の両方を満たすタスクのみ表示）
+- **FR-011**: システムは、タスク一覧を優先順位、終了期限、作成日時でソートできること
+- **FR-012**: システムは、タスクに1つ以上のラベル（タグ）を関連付けられること
+- **FR-013**: システムは、ラベルによるタスクのフィルタリング機能を提供すること
+- **FR-014**: システムは、ユーザーごとにタスクとラベルを分離し、他のユーザーのデータにアクセスできないようにすること
+- **FR-015**: システムは、タスク作成時に少なくともタスク名を必須項目とすること
+- **FR-016**: システムは、ユーザーがログアウトできる機能を提供すること
 
-*Example of marking unclear requirements:*
+### Key Entities
 
-- **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
-- **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
+- **ユーザー（User）**: システムを使用する個人。メールアドレス、パスワード（ハッシュ化）、登録日時などの属性を持つ。各ユーザーは複数のタスクとラベルを所有する。
+- **タスク（Task）**: 管理対象の作業項目。タスク名、説明、ステータス、優先順位、終了期限、作成日時、更新日時などの属性を持つ。1人のユーザーに属し、0個以上のラベルを関連付けられる。
+- **ラベル（Label）**: タスクを分類するためのタグ。ラベル名、作成日時などの属性を持つ。1人のユーザーに属し、複数のタスクに関連付けられる。
 
-### Key Entities *(include if feature involves data)*
+## Clarifications
 
-- **[Entity 1]**: [What it represents, key attributes without implementation]
-- **[Entity 2]**: [What it represents, relationships to other entities]
+### Session 2025-12-24
+
+- Q: タスクやユーザー情報をどのように保存しますか？ → A: PostgreSQL/MySQLなど本格的なデータベース
+- Q: ユーザー登録時のパスワード強度要件はどの程度ですか？ → A: 最小8文字以上
+- Q: タスクの終了期限が過去の日付の場合、どのように表示・通知しますか？ → A: 視覚的な警告表示（赤色など）
+- Q: 同時に複数のフィルター（ステータス+ラベル）を適用した場合の動作は？ → A: AND条件（両方の条件を満たすタスクのみ表示）
+- Q: 検索とフィルターを同時に使用した場合の動作は？ → A: 両方を適用（AND条件）
 
 ## Success Criteria *(mandatory)*
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
-
 ### Measurable Outcomes
 
-- **SC-001**: [Measurable metric, e.g., "Users can complete account creation in under 2 minutes"]
-- **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
-- **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
-- **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+- **SC-001**: ユーザーは、アカウント作成からログインまでを2分以内に完了できる
+- **SC-002**: ユーザーは、新しいタスクを作成し、すべての属性（名前、説明、期限、優先順位）を設定して保存するまでを1分以内に完了できる
+- **SC-003**: ユーザーは、タスクのステータスを変更する操作を5秒以内に完了できる
+- **SC-004**: 100件のタスクが存在する状態で、検索結果が1秒以内に表示される
+- **SC-005**: ソート操作が実行されてから、再整列されたタスク一覧が1秒以内に表示される
+- **SC-006**: ユーザーの90%が、初回使用時にタスク作成機能を成功裏に完了できる
+- **SC-007**: フィルター操作（ステータスまたはラベル）が実行されてから、絞り込まれたタスク一覧が0.5秒以内に表示される
+- **SC-008**: システムは、100人の同時ログインユーザーをサポートできる（学習用途の想定規模）
