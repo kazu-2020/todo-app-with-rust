@@ -1,0 +1,911 @@
+openapi: 3.0.3
+info:
+  title: Task Management API
+  description: |
+    タスク管理システムのREST API仕様
+
+    このAPIは、ユーザー認証、タスクのCRUD操作、フィルタリング、検索、ソート、ラベル管理機能を提供します。
+  version: 1.0.0
+  contact:
+    name: Task Management Team
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+  - url: https://api.example.com/api
+    description: Production server
+
+tags:
+  - name: Auth
+    description: 認証・認可関連のエンドポイント
+  - name: Tasks
+    description: タスク管理関連のエンドポイント
+  - name: Labels
+    description: ラベル管理関連のエンドポイント
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Authorization: Bearer {JWT token}"
+
+  schemas:
+    # ========== Auth Schemas ==========
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+          description: ユーザーのメールアドレス（一意）
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: password123
+          description: パスワード（最小8文字）
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    AuthResponse:
+      type: object
+      required:
+        - token
+        - user
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          description: JWT認証トークン
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-12-24T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-12-24T10:00:00Z
+
+    # ========== Task Schemas ==========
+    TaskStatus:
+      type: string
+      enum:
+        - not_started
+        - in_progress
+        - completed
+      description: |
+        タスクのステータス
+        - not_started: 未着手（デフォルト）
+        - in_progress: 着手中
+        - completed: 完了
+
+    Priority:
+      type: string
+      enum:
+        - high
+        - medium
+        - low
+      description: |
+        タスクの優先順位
+        - high: 高
+        - medium: 中
+        - low: 低
+
+    Task:
+      type: object
+      required:
+        - id
+        - user_id
+        - title
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        user_id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174001
+        title:
+          type: string
+          maxLength: 255
+          example: レポート作成
+          description: タスク名（必須）
+        description:
+          type: string
+          nullable: true
+          example: 月次レポートを作成する
+          description: タスクの詳細説明
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: 2025-12-31
+          description: 終了期限（YYYY-MM-DD形式）
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+          description: このタスクに関連付けられたラベル
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-12-24T10:00:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2025-12-24T10:00:00Z
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          example: レポート作成
+          description: タスク名（必須）
+        description:
+          type: string
+          nullable: true
+          example: 月次レポートを作成する
+        priority:
+          $ref: '#/components/schemas/Priority'
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: 2025-12-31
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          example: レポート作成（更新版）
+        description:
+          type: string
+          nullable: true
+          example: Q4月次レポートを作成する
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+          nullable: true
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          example: 2025-12-31
+
+    TaskListResponse:
+      type: object
+      required:
+        - tasks
+        - total
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        total:
+          type: integer
+          example: 42
+          description: 総タスク数
+
+    # ========== Label Schemas ==========
+    Label:
+      type: object
+      required:
+        - id
+        - user_id
+        - name
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174002
+        user_id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174001
+        name:
+          type: string
+          maxLength: 100
+          example: 仕事
+          description: ラベル名
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: '#FF5733'
+          description: Hex形式の色コード
+        created_at:
+          type: string
+          format: date-time
+          example: 2025-12-24T10:00:00Z
+
+    CreateLabelRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: 仕事
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: '#FF5733'
+
+    UpdateLabelRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: 個人
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          nullable: true
+          example: '#00FF00'
+
+    AddLabelToTaskRequest:
+      type: object
+      required:
+        - label_id
+      properties:
+        label_id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174002
+
+    # ========== Error Schemas ==========
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: InvalidInput
+          description: エラーコード
+        message:
+          type: string
+          example: Invalid email format
+          description: エラーメッセージ
+        details:
+          type: object
+          nullable: true
+          description: エラーの詳細情報
+
+  responses:
+    UnauthorizedError:
+      description: 認証エラー（トークンが無効または欠落）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Unauthorized
+            message: Invalid or missing JWT token
+
+    ForbiddenError:
+      description: 権限エラー（他のユーザーのリソースにアクセス）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Forbidden
+            message: You don't have permission to access this resource
+
+    NotFoundError:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: NotFound
+            message: Task not found
+
+    ValidationError:
+      description: バリデーションエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: ValidationError
+            message: Invalid input data
+            details:
+              title: Title is required
+
+paths:
+  # ========== Auth Endpoints ==========
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: ユーザー登録
+      description: |
+        新しいユーザーアカウントを作成します（FR-001）
+        - メールアドレスは一意である必要があります
+        - パスワードは最小8文字
+        - 成功時、自動的にログイン状態になりJWTトークンを返します
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: メールアドレスが既に登録済み
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Conflict
+                message: Email already exists
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: ログイン
+      description: |
+        ユーザー認証を行い、JWTトークンを発行します（FR-002）
+        - メールアドレスとパスワードで認証
+        - 成功時、JWTトークンを返します（有効期限: 24時間）
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 認証失敗（メールアドレスまたはパスワードが間違っている）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Unauthorized
+                message: Invalid email or password
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: ログアウト
+      description: |
+        ユーザーをログアウトします（FR-016）
+        - JWT方式のため、クライアント側でトークンを破棄
+        - サーバー側では特に処理なし（ステートレス）
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: ログアウト成功
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ========== Task Endpoints ==========
+  /tasks:
+    get:
+      tags:
+        - Tasks
+      summary: タスク一覧取得
+      description: |
+        ログインユーザーのタスク一覧を取得します（FR-008, FR-009, FR-010, FR-011, FR-013, FR-019, FR-020）
+
+        **フィルタリング**:
+        - status: ステータスでフィルター（FR-009）
+        - label_ids: ラベルIDでフィルター（FR-013）
+        - search: タスク名・説明でキーワード検索（FR-010）
+        - 複数フィルター適用時はAND条件（FR-019, FR-020）
+
+        **ソート**:
+        - sort_by: ソートフィールド（priority, due_date, created_at）（FR-011）
+        - sort_order: ソート順序（asc, desc）
+
+        **パフォーマンス**: 100件のタスクで1秒以内（SC-004, SC-005, SC-007）
+      operationId: listTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          description: ステータスフィルター
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+        - name: label_ids
+          in: query
+          description: ラベルIDフィルター（カンマ区切り）
+          schema:
+            type: string
+            example: 123e4567-e89b-12d3-a456-426614174002,123e4567-e89b-12d3-a456-426614174003
+        - name: search
+          in: query
+          description: キーワード検索（タスク名・説明）
+          schema:
+            type: string
+            example: レポート
+        - name: sort_by
+          in: query
+          description: ソートフィールド
+          schema:
+            type: string
+            enum:
+              - priority
+              - due_date
+              - created_at
+            default: created_at
+        - name: sort_order
+          in: query
+          description: ソート順序
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+        - name: limit
+          in: query
+          description: 取得件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: オフセット
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: タスク一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Tasks
+      summary: タスク作成
+      description: |
+        新しいタスクを作成します（FR-004, FR-005, FR-006, FR-015）
+        - タスク名は必須（FR-015）
+        - 終了期限、優先順位は任意
+        - 作成時のデフォルトステータス: not_started
+
+        **パフォーマンス**: 1分以内に完了（SC-002）
+      operationId: createTask
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: タスク作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /tasks/{task_id}:
+    get:
+      tags:
+        - Tasks
+      summary: タスク詳細取得
+      description: 指定されたタスクの詳細を取得します（FR-003）
+      operationId: getTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: タスクID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: タスク詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Tasks
+      summary: タスク更新
+      description: |
+        タスクを更新します（FR-007）
+        - タスク名、説明、ステータス、優先順位、期限を更新可能
+        - 部分更新をサポート（指定したフィールドのみ更新）
+
+        **パフォーマンス**: ステータス変更は5秒以内（SC-003）
+      operationId: updateTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: タスクID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: タスク更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: タスク削除
+      description: タスクを削除します（FR-014）
+      operationId: deleteTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: タスクID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: タスク削除成功
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /tasks/{task_id}/labels:
+    post:
+      tags:
+        - Tasks
+      summary: タスクにラベルを追加
+      description: タスクにラベルを関連付けます（FR-012）
+      operationId: addLabelToTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: タスクID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLabelToTaskRequest'
+      responses:
+        '204':
+          description: ラベル追加成功
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Tasks
+      summary: タスクからラベルを削除
+      description: タスクからラベルの関連付けを解除します
+      operationId: removeLabelFromTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: タスクID
+          schema:
+            type: string
+            format: uuid
+        - name: label_id
+          in: query
+          required: true
+          description: ラベルID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: ラベル削除成功
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # ========== Label Endpoints ==========
+  /labels:
+    get:
+      tags:
+        - Labels
+      summary: ラベル一覧取得
+      description: ログインユーザーのラベル一覧を取得します（FR-014）
+      operationId: listLabels
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: ラベル一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  labels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Label'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Labels
+      summary: ラベル作成
+      description: |
+        新しいラベルを作成します（FR-012）
+        - ラベル名は必須
+        - 同一ユーザー内でラベル名が重複不可
+        - 色はオプション
+      operationId: createLabel
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLabelRequest'
+      responses:
+        '201':
+          description: ラベル作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: ラベル名が既に存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Conflict
+                message: Label name already exists
+
+  /labels/{label_id}:
+    get:
+      tags:
+        - Labels
+      summary: ラベル詳細取得
+      description: 指定されたラベルの詳細を取得します
+      operationId: getLabel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          description: ラベルID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ラベル詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Labels
+      summary: ラベル更新
+      description: ラベルを更新します
+      operationId: updateLabel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          description: ラベルID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLabelRequest'
+      responses:
+        '200':
+          description: ラベル更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Labels
+      summary: ラベル削除
+      description: |
+        ラベルを削除します（FR-014）
+        - ラベルを削除すると、タスクとの関連付けも自動的に削除されます
+      operationId: deleteLabel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: label_id
+          in: path
+          required: true
+          description: ラベルID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: ラベル削除成功
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
